@@ -48,13 +48,15 @@ private:
   const int JOINT_CONFIDENCE_THR = 90;
   const int LANDMARKS_CONFIDENCE_THR = 90;
   const int HEAD_BOUNDING_BOX_THR = 90;
-
+  
+  ros::NodeHandle n;	
   ros::Subscriber mTrackingOutputSubscriber;
   ros::ServiceClient mRecognitionRequestClient;
   ros::ServiceClient mStartTrackingRequestClient;
   ros::ServiceClient mStopTrackingRequestClient;
   ros::ServiceClient mRegisterRequestClient;
   ros::ServiceClient mConfigClient;
+  ros::Publisher gesture_pub;
 
   std::mutex mMutex;
 

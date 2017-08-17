@@ -13,11 +13,14 @@
 
 #include <sstream>
 #include <realsense_ros_person/PersonModuleState.h>
+#include "ros/ros.h"
+#include "std_msgs/String.h"
 
 std::string PersonTrackingSample::PERSON_MODULE_STATE_TOPIC = "/person_tracking/module_state";
 std::string RegistrationResultToString(int status);
 std::string RecognitionResultToString(int status);
 std::string WaveGestureToString(int32_t waveGestureRos);
+std_msgs::String msg;
 
 
 PersonTrackingSample::PersonTrackingSample() : m_viewer(false), m_trackingRenderer(m_viewer)
@@ -34,6 +37,9 @@ PersonTrackingSample::PersonTrackingSample() : m_viewer(false), m_trackingRender
 
 void PersonTrackingSample::ProcessCommandLineArgs()
 {
+  gesture_pub=n.advertise<std_msgs::String>("/gesturestate", 1000);
+  
+
   ros::NodeHandle nodeHandle("~");
   nodeHandle.param<bool>("skeletonEnabled", mEnableSkeleton, false);
   ROS_INFO_STREAM("mEnableSkeleton = " << mEnableSkeleton);
@@ -251,6 +257,8 @@ void PersonTrackingSample::GlobalHandler(TrackingRenderer::SelectType type)
 
 void PersonTrackingSample::DrawPersonSummaryReport(cv::Mat image, realsense_ros_person::User &user)
 {
+	
+
   std::stringstream summaryText;// summary text at at top left corner of image (center of mass, orientation etc.)
 
   //add center of mass (world coordinates)
@@ -271,8 +279,15 @@ void PersonTrackingSample::DrawPersonSummaryReport(cv::Mat image, realsense_ros_
   int32_t waveGesture = user.gestures.wave.type;
   if (waveGesture != (int32_t)realsense_ros_person::Wave::WAVE_NOT_DETECTED)
   {
+	gesture_pub.publish(msg);
+	msg.data="";
     summaryText << " wave gesture: " << WaveGestureToString(waveGesture).c_str() << "\n";
   }
+  else
+  {msg.data="";
+   gesture_pub.publish(msg);
+   	
+   }
 
   m_trackingRenderer.DrawLineAtSummaryReport(image, summaryText.str());
 }
@@ -327,20 +342,29 @@ std::string RecognitionResultToString(int status)
 }
 
 std::string WaveGestureToString(int32_t waveGestureRos)
-{
+{	
+	
+
+	
   switch (waveGestureRos)
   {
   case realsense_ros_person::Wave::WAVE_NOT_DETECTED:
+	msg.data="";
     return "Wave not detected";
   case realsense_ros_person::Wave::WAVE_LEFT_LA:
-    return "Wave left left area";
+	msg.data="LR";
+	 return "Wave left left area";
   case realsense_ros_person::Wave::WAVE_RIGHT_LA:
-    return "Wave right left area";
+	msg.data="LL";
+   	return "Wave right left area";
   case realsense_ros_person::Wave::WAVE_LEFT_RA:
-    return "Wave left right area";
+	msg.data="RR";
+    	return "Wave left right area";
   case  realsense_ros_person::Wave::WAVE_RIGHT_RA:
-    return "Wave right right area";
+	msg.data="RL";
+	return "Wave right right area";
   default:
     throw std::runtime_error("unsupported wave gesture value");
   }
+
 }
